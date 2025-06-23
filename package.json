@@ -2,7 +2,7 @@
   "name": "manual-site-extension",
   "displayName": "VSCode to ManualSite Extension",
   "description": "マニュアルサイト操作用のVSCode拡張機能",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "your-publisher-name",
   "engines": {
     "vscode": "^1.60.0"
@@ -19,6 +19,10 @@
       {
         "command": "extension.createArticleTemplate",
         "title": "Create Article: 新しい記事テンプレートを生成"
+      },
+      {
+        "command": "extension.insertImageToArticle",
+        "title": "Insert Image: 画像を挿入"
       }
     ]
   },
