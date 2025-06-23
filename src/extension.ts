@@ -2,6 +2,63 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 
+export async function insertImageToArticle() {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showErrorMessage('エディタが開かれていません。');
+        return;
+    }
+
+    const articlePath = editor.document.fileName;
+    const articleFileName = path.basename(articlePath, '.md');
+
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+        vscode.window.showErrorMessage('ワークスペースが開かれていません。');
+        return;
+    }
+
+    const workspaceRoot = workspaceFolders[0].uri.fsPath;
+
+    const imageDir = path.join(workspaceRoot, 'docs', 'contents', 'img', articleFileName);
+    if (!fs.existsSync(imageDir)) {
+        fs.mkdirSync(imageDir, { recursive: true });
+    }
+
+    const fileUris = await vscode.window.showOpenDialog({
+        canSelectMany: false,
+        openLabel: '画像を選択',
+        filters: {
+            'Images': ['png', 'jpg', 'jpeg', 'gif', 'svg']
+        }
+    });
+
+    if (!fileUris || fileUris.length === 0) {
+        vscode.window.showErrorMessage('画像が選択されていません。');
+        return;
+    }
+
+    const originalPath = fileUris[0].fsPath;
+    const ext = path.extname(originalPath);
+    let index = 1;
+    let targetFileName = `img${index}${ext}`;
+    while (fs.existsSync(path.join(imageDir, targetFileName))) {
+        index++;
+        targetFileName = `img${index}${ext}`;
+    }
+
+    const targetFilePath = path.join(imageDir, targetFileName);
+    fs.copyFileSync(originalPath, targetFilePath);
+
+    const markdownImage = `![img${index}](./img/${articleFileName}/${targetFileName})`;
+
+    editor.edit(editBuilder => {
+        editBuilder.insert(editor.selection.active, markdownImage);
+    });
+
+    vscode.window.showInformationMessage(`画像 ${targetFileName} を挿入しました。`);
+}
+
 async function createArticleTemplate() {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
@@ -82,5 +139,8 @@ async function createArticleTemplate() {
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('extension.createArticleTemplate', createArticleTemplate)
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('extension.insertImageToArticle', insertImageToArticle)
     );
 }
