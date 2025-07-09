@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 
-async function commitWithzdateUpdate() {
+async function commitWithDateUpdate() {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
         vscode.window.showErrorMessage('ワークスペースが開かれていません。');
@@ -136,7 +136,7 @@ async function commitWithzdateUpdate() {
     }
 }
 
-export async function insertImageToArticle() {
+async function insertImageToArticle() {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         vscode.window.showErrorMessage('エディタが開かれていません。');
@@ -276,5 +276,8 @@ export function activate(context: vscode.ExtensionContext) {
     );
     context.subscriptions.push(
         vscode.commands.registerCommand('extension.insertImageToArticle', insertImageToArticle)
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('extension.commitWithDateUpdate', commitWithDateUpdate)
     );
 }
