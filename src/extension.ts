@@ -92,7 +92,7 @@ async function commitWithDateUpdate() {
     ].join('\n');
 
     await fs.promises.mkdir(path.dirname(commitMsgPath), { recursive: true });
-    await fs.promises.writeFile(commitMsgPath, '# コミットメッセージを記述してください\n', 'utf8');
+    await fs.promises.writeFile(commitMsgPath, template, 'utf8');
 
     const doc = await vscode.workspace.openTextDocument(commitMsgPath);
     await vscode.window.showTextDocument(doc);
