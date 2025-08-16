@@ -2,7 +2,7 @@
   "name": "manual-site-extension",
   "displayName": "VSCode to ManualSite Extension",
   "description": "マニュアルサイト操作用のVSCode拡張機能",
-  "version": "0.0.3,
+  "version": "0.0.3",
   "publisher": "your-publisher-name",
   "engines": {
     "vscode": "^1.60.0"
