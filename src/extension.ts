@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { Octokit } from '@octokit/rest';
 
 async function commitWithDateUpdate() {
     const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -270,6 +271,114 @@ async function createArticleTemplate() {
     vscode.window.showInformationMessage(`記事 "${title}" が作成されました: ${contentPath}`);
 }  
 
+async function attachFileToArticle() {
+    try {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showErrorMessage("エディタが開かれていません。");
+                return;
+        }
+
+        const docPath = editor.document.fileName;
+        if (!docPath.endsWith(".md")) {
+            vscode.window.showErrorMessage("Markdownファイルを開いてください。");
+            return;
+        }
+
+        const slug = path.basename(docPath, ".md");
+        const tag = `article-${slug}`;
+
+        const fileUris = await vscode.window.showOpenDialog({
+            canSelectMany: false,
+        });
+
+        if (!fileUris) return;
+
+        const filePath = fileUris[0].fsPath;
+        const fileName = path.basename(filePath);
+
+        if (!/^[a-zA-Z0-9._-]+$/.test(fileName)) {
+            vscode.window.showErrorMessage("ファイル名に使用できない文字が含まれています。英数字、ドット、アンダーバー、ハイフンのみを使用してください。");
+            return;
+        }
+
+        const session = await vscode.authentication.getSession(
+            "github",
+            ["repo"],
+            { createIfNone: true }
+        );
+
+        const octokit = new Octokit({
+            auth: session.accessToken
+        });
+
+        const OWNER = "PicricAcid";
+        const REPO = "document-site-sample";
+
+        let release;
+
+        try {
+            const res = await octokit.repos.getReleaseByTag({
+                owner: OWNER,
+                repo: REPO,
+                tag
+            });
+            release = res.data;
+        } catch {
+            const res = await octokit.repos.createRelease({
+                owner: OWNER,
+                repo: REPO,
+                tag_name: tag,
+                name: tag
+            });
+            release = res.data;
+        }
+
+        const existing = release.assets.find(
+            (a) => a.name === fileName
+        );
+
+        if (existing) {
+            await octokit.repos.deleteReleaseAsset({
+                owner: OWNER,
+                repo: REPO,
+                asset_id: existing.id
+            });
+        }
+
+        const fileData = fs.readFileSync(filePath);
+
+        const uploadRes = await octokit.repos.uploadReleaseAsset({
+            owner: OWNER,
+            repo: REPO,
+            release_id: release.id,
+            name: fileName,
+            data: fileData as unknown as string,
+            headers: {
+                "content-type": "application/octet-stream",
+                "content-length": fileData.length
+            }
+        });
+
+
+        const downloadUrl = uploadRes.data.browser_download_url;
+
+        const markdown = `[${fileName}](${downloadUrl})`;
+
+        editor.edit((editBuilder) => {
+            editBuilder.insert(editor.selection.active, markdown);
+        });
+
+        vscode.window.showInformationMessage(
+            "ファイルがGitHubリリースにアップロードされ、Markdownリンクが挿入されました。"
+        );
+    } catch (err: any) {
+        vscode.window.showErrorMessage(
+            `ファイルの添付に失敗しました: ${err.message}`
+        );
+    }
+}
+
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('extension.createArticleTemplate', createArticleTemplate)
@@ -279,5 +388,8 @@ export function activate(context: vscode.ExtensionContext) {
     );
     context.subscriptions.push(
         vscode.commands.registerCommand('extension.commitWithDateUpdate', commitWithDateUpdate)
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('extension.attachFileToArticle', attachFileToArticle)
     );
 }

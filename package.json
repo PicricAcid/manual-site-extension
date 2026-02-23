@@ -27,6 +27,10 @@
       {
         "command": "extension.commitWithDateUpdate",
         "title": "Commit with Date and Lastmod Update: 日付更新とコミット"
+      },
+      {
+        "command": "extension.attachFileToArticle",
+        "title": "Attach File to Article: 記事にファイルを添付"
       }
     ]
   },
@@ -37,11 +41,15 @@
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
-    "typescript": "^4.4.3",
-    "vscode": "^1.1.37"
+    "@types/vscode": "^1.109.0",
+    "typescript": "^5.9.3",
+    "vscode": "^0.9.9"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/PicricAcid/manual-site-extension.git"
+  },
+  "dependencies": {
+    "@octokit/rest": "^22.0.1"
   }
 }
